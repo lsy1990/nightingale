@@ -36,6 +36,7 @@ type AlertCurEventAbbr struct {
 	Hash      string `json:"hash"`       // rule_id + vector_key
 	RuleId    int64  `json:"rule_id"`
 	RuleName  string `json:"rule_name"`
+	RuleNote  string `json:"rule_note"`
 	Severity  int    `json:"severity"`
 	PromQl    string `json:"prom_ql"`
 
@@ -72,6 +73,7 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	AlertCurEventAbbrObj.Hash = NoticeObj.Event.Hash
 	AlertCurEventAbbrObj.RuleId = NoticeObj.Event.RuleId
 	AlertCurEventAbbrObj.RuleName = NoticeObj.Event.RuleName
+	AlertCurEventAbbrObj.RuleNote = NoticeObj.Event.RuleNote
 	AlertCurEventAbbrObj.Severity = NoticeObj.Event.Severity
 	AlertCurEventAbbrObj.PromQl = NoticeObj.Event.PromQl
 	AlertCurEventAbbrObj.TargetIdent = NoticeObj.Event.TargetIdent
@@ -83,6 +85,7 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	logger.Errorf("GroupId = %v", NoticeObj.Event.GroupId)
 	logger.Errorf("GroupName = %v", NoticeObj.Event.GroupName)
 	logger.Errorf("RuleName = %v", NoticeObj.Event.RuleName)
+        logger.Errorf("RuleNote = %v", NoticeObj.Event.RuleNote)
 	logger.Errorf("Severity = %v", NoticeObj.Event.Severity)
 	logger.Errorf("PromQl = %v", NoticeObj.Event.PromQl)
 	logger.Errorf("TriggerValue = %v", NoticeObj.Event.TriggerValue)
