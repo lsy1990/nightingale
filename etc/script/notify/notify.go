@@ -43,6 +43,7 @@ type AlertCurEventAbbr struct {
 	TargetIdent      string      `json:"target_ident"`
 	TriggerTime      int64       `json:"trigger_time"`
 	TriggerValue     string      `json:"trigger_value"`
+	LastEvalTime     int64       `json:"last_eval_time" gorm:"-"`   // for notify.py 上次计算的时间
 	IsRecovered      bool        `json:"is_recovered" gorm:"-"`     // for notify.py
 	NotifyUsersObj   []*UserAbbr `json:"notify_users_obj" gorm:"-"` // for notify.py
 	FirstTriggerTime int64       `json:"first_trigger_time"`        // 连续告警的首次告警时间
@@ -81,6 +82,7 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	AlertCurEventAbbrObj.TriggerValue = NoticeObj.Event.TriggerValue
 	AlertCurEventAbbrObj.IsRecovered = NoticeObj.Event.IsRecovered
 	AlertCurEventAbbrObj.FirstTriggerTime = NoticeObj.Event.FirstTriggerTime
+	AlertCurEventAbbrObj.LastEvalTime = NoticeObj.Event.LastEvalTime
 	logger.Errorf("Cluster = %v", NoticeObj.Event.Cluster)
 	logger.Errorf("GroupId = %v", NoticeObj.Event.GroupId)
 	logger.Errorf("GroupName = %v", NoticeObj.Event.GroupName)
@@ -91,7 +93,9 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	logger.Errorf("TriggerValue = %v", NoticeObj.Event.TriggerValue)
 	logger.Errorf("TargetIdent = %v", NoticeObj.Event.TargetIdent)
 	logger.Errorf("TriggerTime = %v", NoticeObj.Event.TriggerTime)
-	logger.Errorf("TriggerTime = %v", AlertCurEventAbbrObj)
+	logger.Errorf("FirstTriggerTime = %v", NoticeObj.Event.FirstTriggerTime)
+	logger.Errorf("LastEvalTime = %v", NoticeObj.Event.LastEvalTime)
+	logger.Errorf("NotifyUsersObj = %v", NoticeObj.Event.NotifyUsersObj)
 	NotifyUsersObj := NoticeObj.Event.NotifyUsersObj
 	var users []*UserAbbr
 	for _, user := range NotifyUsersObj {
