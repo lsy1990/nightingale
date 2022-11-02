@@ -87,7 +87,7 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	logger.Errorf("GroupId = %v", NoticeObj.Event.GroupId)
 	logger.Errorf("GroupName = %v", NoticeObj.Event.GroupName)
 	logger.Errorf("RuleName = %v", NoticeObj.Event.RuleName)
-        logger.Errorf("RuleNote = %v", NoticeObj.Event.RuleNote)
+	logger.Errorf("RuleNote = %v", NoticeObj.Event.RuleNote)
 	logger.Errorf("Severity = %v", NoticeObj.Event.Severity)
 	logger.Errorf("PromQl = %v", NoticeObj.Event.PromQl)
 	logger.Errorf("TriggerValue = %v", NoticeObj.Event.TriggerValue)
@@ -141,10 +141,10 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	defer resp.Body.Close()
-
-	fmt.Println("status", resp.Status)
-
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+		fmt.Println("status", resp.Status)
+	}
 }
 
 func (n *N9EPlugin) NotifyMaintainer(bs []byte) {
