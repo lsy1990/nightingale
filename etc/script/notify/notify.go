@@ -99,7 +99,6 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	NotifyUsersObj := NoticeObj.Event.NotifyUsersObj
 	var users []*UserAbbr
 	for _, user := range NotifyUsersObj {
-
 		UserAbbrObj := UserAbbr{}
 		UserAbbrObj.Username = user.Username
 		UserAbbrObj.Nickname = user.Nickname
@@ -114,6 +113,10 @@ func (n *N9EPlugin) Notify(bs []byte) {
 		logger.Errorf("NotifyUsersObj = %v", user.Admin)
 	}
 	AlertCurEventAbbrObj.NotifyUsersObj = users
+	if AlertCurEventAbbrObj.NotifyUsersObj == nil || len(AlertCurEventAbbrObj.NotifyUsersObj) == 0 {
+		logger.Errorf("AlertCurEventAbbrObj.NotifyUsersObj == nil,so it is invalid")
+		return
+	}
 
 	m := multiconfig.NewWithPath("conf/notify_config.toml") // supports TOML, JSON and YAML
 
