@@ -40,13 +40,14 @@ type AlertCurEventAbbr struct {
 	Severity  int    `json:"severity"`
 	PromQl    string `json:"prom_ql"`
 
-	TargetIdent      string      `json:"target_ident"`
-	TriggerTime      int64       `json:"trigger_time"`
-	TriggerValue     string      `json:"trigger_value"`
-	LastEvalTime     int64       `json:"last_eval_time" gorm:"-"`   // for notify.py 上次计算的时间
-	IsRecovered      bool        `json:"is_recovered" gorm:"-"`     // for notify.py
-	NotifyUsersObj   []*UserAbbr `json:"notify_users_obj" gorm:"-"` // for notify.py
-	FirstTriggerTime int64       `json:"first_trigger_time"`        // 连续告警的首次告警时间
+	TargetIdent      string            `json:"target_ident"`
+	TriggerTime      int64             `json:"trigger_time"`
+	TriggerValue     string            `json:"trigger_value"`
+	LastEvalTime     int64             `json:"last_eval_time" gorm:"-"`   // for notify.py 上次计算的时间
+	IsRecovered      bool              `json:"is_recovered" gorm:"-"`     // for notify.py
+	NotifyUsersObj   []*UserAbbr       `json:"notify_users_obj" gorm:"-"` // for notify.py
+	FirstTriggerTime int64             `json:"first_trigger_time"`        // 连续告警的首次告警时间
+	TagsMap          map[string]string `json:"-" gorm:"-"`
 }
 type UserAbbr struct {
 	Username string `json:"username"`
@@ -83,6 +84,7 @@ func (n *N9EPlugin) Notify(bs []byte) {
 	AlertCurEventAbbrObj.IsRecovered = NoticeObj.Event.IsRecovered
 	AlertCurEventAbbrObj.FirstTriggerTime = NoticeObj.Event.FirstTriggerTime
 	AlertCurEventAbbrObj.LastEvalTime = NoticeObj.Event.LastEvalTime
+	AlertCurEventAbbrObj.TagsMap = NoticeObj.Event.TagsMap
 	logger.Errorf("Cluster = %v", NoticeObj.Event.Cluster)
 	logger.Errorf("GroupId = %v", NoticeObj.Event.GroupId)
 	logger.Errorf("GroupName = %v", NoticeObj.Event.GroupName)
