@@ -140,6 +140,7 @@ type Config struct {
 	CAS                  cas.Config
 	OAuth                oauth2x.Config
 	TargetMetrics        map[string]string
+	PangeaOAuth          string
 }
 
 type ClusterOptions struct {

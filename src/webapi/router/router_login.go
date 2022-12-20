@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/didi/nightingale/v5/src/pkg/oauth2x"
 	"github.com/didi/nightingale/v5/src/pkg/oidcc"
 	"github.com/didi/nightingale/v5/src/webapi/config"
+	jsoniter "github.com/json-iterator/go"
 )
 
 type loginForm struct {
@@ -52,6 +54,68 @@ func loginPost(c *gin.Context) {
 
 	userIdentity := fmt.Sprintf("%d-%s", user.Id, user.Username)
 
+	ts, err := createTokens(config.C.JWTAuth.SigningKey, userIdentity)
+	ginx.Dangerous(err)
+	ginx.Dangerous(createAuth(c.Request.Context(), userIdentity, ts))
+
+	ginx.NewRender(c).Data(gin.H{
+		"user":          user,
+		"access_token":  ts.AccessToken,
+		"refresh_token": ts.RefreshToken,
+	}, nil)
+}
+
+func loginDirectBasedOnPangea(c *gin.Context) {
+	pangeaToken := ginx.QueryStr(c, "pangeaToken", "")
+	req, err := http.NewRequest("GET", config.C.PangeaOAuth+pangeaToken, nil)
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
+	userName := jsoniter.Get(body, "data").ToString()
+	if len(userName) == 0 {
+		ginx.NewRender(c).Message("no data")
+		return
+	}
+	user, err := models.UserGet("username=?", userName)
+	ginx.Dangerous(err)
+
+	if user == nil {
+		now := time.Now().Unix()
+		user = &models.User{
+			Username: userName,
+			Password: "******",
+			Nickname: userName,
+			Phone:    "",
+			Email:    "",
+			Portrait: "",
+			Roles:    strings.Join(config.C.OAuth.DefaultRoles, " "),
+			RolesLst: config.C.OAuth.DefaultRoles,
+			Contacts: []byte("{}"),
+			CreateAt: now,
+			UpdateAt: now,
+			CreateBy: "frame",
+			UpdateBy: "frame",
+		}
+
+		// create user from oidc
+		ginx.Dangerous(user.Add())
+	}
+
+	// set user login state
+	userIdentity := fmt.Sprintf("%d-%s", user.Id, user.Username)
 	ts, err := createTokens(config.C.JWTAuth.SigningKey, userIdentity)
 	ginx.Dangerous(err)
 	ginx.Dangerous(createAuth(c.Request.Context(), userIdentity, ts))
