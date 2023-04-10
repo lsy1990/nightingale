@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/didi/nightingale/v5/src/storage"
@@ -122,7 +125,7 @@ func deleteRedirect(ctx context.Context, state string) error {
 
 // Callback 用 code 兑换 accessToken 以及 用户信息
 func Callback(ctx context.Context, code, state string) (*CallbackOutput, error) {
-	ret, err := exchangeUser(code)
+	ret, err := exchangeUserCustom(code)
 	if err != nil {
 		return nil, fmt.Errorf("ilegal user:%v", err)
 	}
@@ -163,6 +166,51 @@ func exchangeUser(code string) (*CallbackOutput, error) {
 
 	return &CallbackOutput{
 		AccessToken: oauth2Token.AccessToken,
+		Username:    getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.username),
+		Nickname:    getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.nickname),
+		Phone:       getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.phone),
+		Email:       getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.email),
+	}, nil
+}
+
+func exchangeUserCustom(code string) (*CallbackOutput, error) {
+	ClientID := cli.config.ClientID
+	ClientSecret := cli.config.ClientSecret
+	TokenURL := cli.config.Endpoint.TokenURL
+	RedirectURL := cli.config.RedirectURL
+	finalTokenUrl := TokenURL + "?" + "code=" + code + "&client_id=" + ClientID + "&client_secret=" + ClientSecret + "&redirect_uri=" + RedirectURL
+	request, err := http.NewRequest("POST", finalTokenUrl, nil)
+	client := &http.Client{}
+	resp, err := client.Do(request)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, fmt.Errorf("failed to get token: %s", err.Error())
+	}
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+		fmt.Println("status", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("E! failed to read response body, error:", err)
+		return nil, fmt.Errorf("E! failed to read response body:%s", err)
+	}
+	ret := strings.Split(string(body), "&")
+	labels := map[string]string{}
+	for _, items := range ret {
+		item := strings.Split(string(items), "=")
+		labels[item[0]] = item[1]
+	}
+	access_token := labels["access_token"]
+
+	userInfo, err := getUserInfo(cli.userInfoAddr, access_token, cli.TranTokenMethod)
+	if err != nil {
+		logger.Errorf("failed to get user info: %s", err)
+		return nil, fmt.Errorf("failed to get user info: %s", err)
+	}
+
+	return &CallbackOutput{
+		AccessToken: access_token,
 		Username:    getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.username),
 		Nickname:    getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.nickname),
 		Phone:       getUserinfoField(userInfo, cli.userinfoIsArray, cli.userinfoPrefix, cli.attributes.phone),
